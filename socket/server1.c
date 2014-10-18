@@ -50,7 +50,7 @@ int main()
 	}
 	
 	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = 8888;
+	server_addr.sin_port = htons(8888);
 	server_addr.sin_addr.s_addr = INADDR_ANY;
 
 	bind(sockfd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));
