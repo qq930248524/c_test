@@ -1,0 +1,24 @@
+int keep_alive = 1;
+int keep_idle = 5, keep_interval = 1, keep_count = 3;
+int ret = 0;
+ 
+if (-1 == (ret = setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &keep_alive,
+				    sizeof(keep_alive)))) {
+	    fprintf(stderr, "[%s %d] set socket to keep alive error: %s", __FILE__,
+			            __LINE__, ERRSTR);
+}
+if (-1 == (ret = setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &keep_idle,
+				    sizeof(keep_idle)))) {
+	    fprintf(stderr, "[%s %d] set socket keep alive idle error: %s", __FILE__,
+			            __LINE__, ERRSTR);
+}
+if (-1 == (ret = setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &keep_interval,
+				    sizeof(keep_interval)))) {
+	    fprintf(stderr, "[%s %d] set socket keep alive interval error: %s", __FILE__,
+			            __LINE__, ERRSTR);
+}
+if (-1 == (ret = setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &keep_count,
+				    sizeof(keep_count)))) {
+	    fprintf(stderr, "[%s %d] set socket keep alive count error: %s", __FILE__,
+			            __LINE__, ERRSTR);
+}
