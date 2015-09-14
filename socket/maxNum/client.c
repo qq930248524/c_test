@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
-char buffer[256];
+
+#define SIZEBLOCK 1024*1024
+char buffer[128];
 
 #if 0
 int read_pack(int sockfd,void * buf,size_t len)
@@ -38,44 +41,57 @@ int read_pack(int sockfd,void * buf,size_t len)
 }
 #endif 
 
-void _send(int sockfd)
+int _send(int sockfd, const void *buff, size_t nbytes, int flags)
 {
-	char data[1024*1024*7];
-	int numwrite = 0;
-	memset(data, 1, sizeof(data));
-	//write(sockfd, buffer, strlen(buffer));
-	numwrite = write(sockfd, data, sizeof(data));
-	sleep(12);
-	printf("the num once write is %dk\n", numwrite/1024);
-	
-	return ;
+    ssize_t ret = -1;
+    do{
+        if((ret=send(sockfd, buff, nbytes, flags)) < 0){
+            return ret;
+        }
+        else if(ret == 0){
+            return ret;
+        }
+        else if(ret < nbytes){
+            nbytes -= ret;
+            buff += ret;
+            continue;
+        }
+        else 
+            break;
+    }while(1);
+
+    return nbytes;
 }
 
 int main()
 {
 	int sockfd, len;
 	struct sockaddr_in server_addr;
-
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = 8888;
-	inet_aton("127.0.0.1", &server_addr.sin_addr.s_addr);
-	//inet_aton("192.168.95.5", &server_addr.sin_addr.s_addr);
-
+	inet_aton("192.168.1.111", &server_addr.sin_addr.s_addr);
+	//inet_aton("127.0.0.1", &server_addr.sin_addr.s_addr);
 	connect(sockfd, (struct sockaddr*)&server_addr, sizeof(struct sockaddr));
 
 	memset(buffer, '\0', sizeof(buffer));
-	strcpy(buffer, "hello server, i`m client, nice to meet u!\n");
-	//write(sockfd, buffer, strlen(buffer));
-	_send(sockfd);
+	strcpy(buffer, "hello server, start send data!!!\n");
+    write(sockfd, buffer, sizeof(buffer));
 
+    int blockNu = 1024;
+    char data[SIZEBLOCK];
+    memset(data, '2', SIZEBLOCK);
+    char *p = data;
 
+    int size = 1024;
+    while(size-- > 0)
+    {
+        write(sockfd, data, sizeof(data));
+    }
 
 	memset(buffer, '\0', sizeof(buffer));
-	read(sockfd, buffer, 256);
-	printf("client said hello to server!\n");
-	printf("server said:%s\n", buffer);
+	strcpy(buffer, "end send data!\n");
+    write(sockfd, buffer, sizeof(buffer));
 
 	close(sockfd);
 	return 0;

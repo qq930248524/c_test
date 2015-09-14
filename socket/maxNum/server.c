@@ -1,13 +1,44 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+
+#define SIZEBLOCK 1024*1024
+FILE* infile;
+unsigned long totalSize = 0;
+
+int _recv(int sockfd, void *buff, size_t nbytes, int flags)
+{
+    ssize_t ret = -1;
+
+    do{
+        ret=read(sockfd, buff, nbytes);
+        printf("ret = %d\n", ret);
+        if(ret < 0){
+            break;
+        }
+        else if(ret == 0){
+            printf("ret = 0 ");
+            return ret;
+        }
+        else if(ret < nbytes){
+            nbytes -= ret;
+            buff += ret;
+            continue;
+        }
+        else
+            break;
+    }while(1);
+
+    return nbytes;
+}
+
 int main()
 {
-	FILE* infile;
 	if((infile = fopen("./test.dat", "a+")) == NULL)
 		return;
 
@@ -15,7 +46,9 @@ int main()
 	int sockfd, clientfd, len;
 	len = sizeof(struct sockaddr);
 	struct sockaddr_in server_addr, client_addr;
-	char buffer[1024*1024*7];
+	char buffer[128];
+    char data[SIZEBLOCK];
+    char *p = &data[0];
 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -29,16 +62,21 @@ int main()
 	clientfd = accept(sockfd, (struct sockaddr*)&client_addr, &len);
 
 	memset(buffer, '\0', sizeof(buffer));
-	sleep(12);
 	numRead = read(clientfd, buffer, sizeof(buffer));
-	sleep(3);
-	fwrite(buffer, 1, sizeof(buffer), infile);
-	printf("server receved:%dK\n", numRead/1024);
+	printf("server receved:%dK\nbuf:%s\n", numRead/1024, buffer);
 
 
 	memset(buffer, '\0', sizeof(buffer));
-	strcpy(buffer, "I have receved! Thanks!\n");
-	write(clientfd, buffer, strlen(buffer));
+    numRead = 0;
+    while(((numRead-1024*1024) < 0))
+    {
+	    numRead += recv(clientfd, data, 1024*1024, 0);
+    }
+	printf("server receved:%dK\n", numRead);
+
+	memset(buffer, '\0', sizeof(buffer));
+	numRead = read(clientfd, buffer, sizeof(buffer));
+	printf("server receved:%dK\nbuf:%s\n", numRead, buffer);
 
 	close(clientfd);
 	close(sockfd);
